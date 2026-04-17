@@ -1,7 +1,15 @@
+// exa is a thin CLI wrapper for the Exa AI search API.
+//
+// See `exa search --help` for usage. This package is intentionally tiny —
+// all command wiring lives in ./cmd and HTTP logic in ./internal/client.
 package main
 
-import "fmt"
+import (
+	"os"
+
+	"github.com/sapihav/exa-cli/cmd"
+)
 
 func main() {
-	fmt.Println("exa-cli v0.0.0")
+	os.Exit(cmd.Execute())
 }

@@ -1,3 +1,5 @@
+/exa
 /exa-cli
 /dist/
 .DS_Store
+coverage.out
