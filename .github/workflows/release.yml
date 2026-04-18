@@ -31,3 +31,7 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PAT with `contents: write` on sapihav/homebrew-tap. Required
+          # because GITHUB_TOKEN only has scope within this repo and
+          # cannot push to the tap repo.
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
