@@ -20,6 +20,17 @@ var validSearchTypes = map[string]bool{
 	"auto":    true,
 }
 
+// envelope is the common output shape emitted on stdout for every successful
+// invocation. M1.5 introduces this so agents can route on `command` and
+// measure latency without parsing stderr. Error path is unchanged.
+type envelope struct {
+	SchemaVersion string `json:"schema_version"`
+	Provider      string `json:"provider"`
+	Command       string `json:"command"`
+	ElapsedMs     int64  `json:"elapsed_ms"`
+	Result        any    `json:"result"`
+}
+
 var (
 	flagNumResults int
 	flagType       string
@@ -56,6 +67,7 @@ func init() {
 // Execute() can translate the failure into a process exit code; stderr
 // messages are printed here so the user sees them before the process exits.
 func runSearch(cmd *cobra.Command, args []string) error {
+	start := time.Now()
 	query := args[0]
 	if query == "" {
 		return userError("query cannot be empty")
@@ -99,7 +111,13 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		return mapClientError(err)
 	}
 
-	return writeJSON(resp)
+	return writeJSON(envelope{
+		SchemaVersion: "1",
+		Provider:      "exa",
+		Command:       "search",
+		ElapsedMs:     time.Since(start).Milliseconds(),
+		Result:        resp,
+	})
 }
 
 // writeJSON marshals v and writes it to --out (or stdout). --pretty controls
