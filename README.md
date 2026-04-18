@@ -8,6 +8,16 @@ Agent-friendly: JSON on stdout, logs on stderr, documented exit codes.
 
 ## Install
 
+**One-line install (recommended)** — no Go toolchain required:
+
+```sh
+curl -sSL https://raw.githubusercontent.com/sapihav/exa-cli/main/install.sh | bash
+```
+
+Downloads the latest release for your OS/arch, verifies SHA-256, installs `exa` to `/usr/local/bin`. Override with `INSTALL_DIR=$HOME/.local/bin`. Requires `curl` + `jq`.
+
+**From source** (requires Go 1.25+):
+
 ```sh
 go install github.com/sapihav/exa-cli@latest
 ```
