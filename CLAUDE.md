@@ -11,7 +11,7 @@ Thin CLI wrapper for the Exa AI API (semantic + neural search, people/company, c
 
 ## Status
 
-Not started — placeholder scaffold (`main.go`). Phase 3 per ROADMAP §7 (after perplexity-cli + jina-cli template proven). Stack TBD per ROADMAP §2.
+**M1 shipped** — `search` subcommand. Stack: **Go 1.25.6** + `spf13/cobra` + stdlib `net/http` (overrides ROADMAP §2's Python stack).
 
 ## Auth
 
