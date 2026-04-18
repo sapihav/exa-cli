@@ -47,28 +47,43 @@ exa search "OSINT tools 2026" --out results.json
 
 ### Example output
 
+Successful invocations emit a single JSON envelope on stdout. Errors go to
+stderr and are not wrapped (see [Exit codes](#exit-codes)).
+
 ```json
 {
-  "requestId": "req_abc123",
-  "autopromptString": "best open-source vector databases",
-  "results": [
-    {
-      "title": "Weaviate: open-source vector database",
-      "url": "https://weaviate.io",
-      "id": "w_1",
-      "publishedDate": "2025-11-14",
-      "author": "Weaviate",
-      "score": 0.912
-    },
-    {
-      "title": "Qdrant — vector similarity search engine",
-      "url": "https://qdrant.tech",
-      "id": "q_1",
-      "score": 0.887
-    }
-  ]
+  "schema_version": "1",
+  "provider": "exa",
+  "command": "search",
+  "elapsed_ms": 1234,
+  "result": {
+    "requestId": "req_abc123",
+    "autopromptString": "best open-source vector databases",
+    "results": [
+      {
+        "title": "Weaviate: open-source vector database",
+        "url": "https://weaviate.io",
+        "id": "w_1",
+        "publishedDate": "2025-11-14",
+        "author": "Weaviate",
+        "score": 0.912
+      },
+      {
+        "title": "Qdrant — vector similarity search engine",
+        "url": "https://qdrant.tech",
+        "id": "q_1",
+        "score": 0.887
+      }
+    ]
+  }
 }
 ```
+
+- `schema_version` — output contract version. Bumped on breaking changes.
+- `provider` — always `exa`.
+- `command` — the subcommand that was run (`search` in M1).
+- `elapsed_ms` — wall-clock time from command start to response marshal, integer ms.
+- `result` — the raw provider response (see Exa's `/search` docs for the full schema).
 
 ## Exit codes
 
@@ -86,4 +101,4 @@ are out of scope for now.
 
 ## License
 
-MIT.
+MIT — see [LICENSE](./LICENSE).
