@@ -65,3 +65,27 @@ release:
     name: exa-cli
   draft: false
   prerelease: auto
+
+homebrew_casks:
+  - name: exa
+    binaries:
+      - exa
+    repository:
+      owner: sapihav
+      name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    homepage: https://github.com/sapihav/exa-cli
+    description: Thin CLI for the Exa AI search API — agent-friendly JSON output
+    license: MIT
+    commit_author:
+      name: goreleaser-bot
+      email: bot@goreleaser.com
+    # Remove macOS quarantine bit so the unsigned binary runs without
+    # Gatekeeper's "cannot be opened" warning. If we add notarization
+    # later, this hook can be dropped.
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/exa"]
+          end

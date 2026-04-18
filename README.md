@@ -8,7 +8,15 @@ Agent-friendly: JSON on stdout, logs on stderr, documented exit codes.
 
 ## Install
 
-**One-line install (recommended)** — no Go toolchain required:
+**Homebrew (macOS)** — recommended on Mac:
+
+```sh
+brew install sapihav/tap/exa
+```
+
+The tap auto-installs on first use; subsequent `brew upgrade` picks up new releases. Note: scoping with `sapihav/tap/` avoids any collision with the deprecated upstream `exa` (ls replacement, now `eza`).
+
+**One-line install (Linux / macOS)** — no Go toolchain required:
 
 ```sh
 curl -sSL https://raw.githubusercontent.com/sapihav/exa-cli/main/install.sh | bash
