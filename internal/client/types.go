@@ -7,13 +7,44 @@ import "encoding/json"
 
 // SearchRequest is the JSON body sent to POST /search.
 //
-// Only the three fields required by Milestone 1 are modelled. When future
-// milestones need more (contents, livecrawl, date filters) add them here and
-// keep them `omitempty` so they do not appear in existing request bodies.
+// Field names mirror Exa's /search contract so callers can cross-reference
+// the provider's docs directly. Everything except Query is `omitempty` —
+// that preserves M1's minimal request body when no M3 filters are set.
+//
+// Category/date/domain/text filters correspond to the MCP parity described
+// in docs/backlog/tasks/upgrade-search-filters.md. Upstream rejects some
+// combinations (e.g. date filters with `category=company`); we do not
+// replicate that policy client-side — the server's 400 is authoritative.
 type SearchRequest struct {
-	Query      string `json:"query"`
-	NumResults int    `json:"numResults,omitempty"`
-	Type       string `json:"type,omitempty"`
+	Query              string           `json:"query"`
+	NumResults         int              `json:"numResults,omitempty"`
+	Type               string           `json:"type,omitempty"`
+	Category           string           `json:"category,omitempty"`
+	IncludeDomains     []string         `json:"includeDomains,omitempty"`
+	ExcludeDomains     []string         `json:"excludeDomains,omitempty"`
+	StartPublishedDate string           `json:"startPublishedDate,omitempty"`
+	EndPublishedDate   string           `json:"endPublishedDate,omitempty"`
+	StartCrawlDate     string           `json:"startCrawlDate,omitempty"`
+	EndCrawlDate       string           `json:"endCrawlDate,omitempty"`
+	IncludeText        []string         `json:"includeText,omitempty"`
+	ExcludeText        []string         `json:"excludeText,omitempty"`
+	UserLocation       string           `json:"userLocation,omitempty"`
+	Moderation         bool             `json:"moderation,omitempty"`
+	Contents           *SearchContents  `json:"contents,omitempty"`
+}
+
+// SearchContents is the nested `contents` object on POST /search. When set,
+// Exa inlines the requested fields on each result, saving a separate
+// /contents call. Zero-valued contents (all fields unset) is represented as
+// a nil pointer so the field is omitted entirely from the request.
+//
+// Semantics match the /contents endpoint: `highlights` and `subpages` are
+// counts (0 means "off"); `text` and `summary` are booleans.
+type SearchContents struct {
+	Text       bool `json:"text,omitempty"`
+	Summary    bool `json:"summary,omitempty"`
+	Highlights int  `json:"highlights,omitempty"`
+	Subpages   int  `json:"subpages,omitempty"`
 }
 
 // SearchResult is one item in the `results` array of a /search response.
@@ -31,6 +62,15 @@ type SearchResult struct {
 	Score         *float64 `json:"score,omitempty"`
 	Image         string   `json:"image,omitempty"`
 	Favicon       string   `json:"favicon,omitempty"`
+
+	// M3 enrichment: populated when the request sets `contents.*`. Fields
+	// alias ContentsResult's shapes so downstream consumers that already
+	// parse /contents output can reuse the same types. All are omitempty so
+	// responses from M1-style requests stay byte-identical.
+	Text       string           `json:"text,omitempty"`
+	Summary    string           `json:"summary,omitempty"`
+	Highlights []string         `json:"highlights,omitempty"`
+	Subpages   []ContentsResult `json:"subpages,omitempty"`
 }
 
 // SearchResponse is the full /search response payload.

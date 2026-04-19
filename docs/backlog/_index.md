@@ -6,11 +6,10 @@ _(work currently in flight)_
 
 ## Up Next
 
-1. [M3 — `search` filter upgrade](tasks/upgrade-search-filters.md) — P1 (MCP `web_search_advanced_exa` + company/people parity)
-2. [M4 — `find-similar` subcommand](tasks/add-find-similar-subcommand.md) — P2 (beyond MCP)
-3. [M5 — `answer` subcommand](tasks/add-answer-subcommand.md) — P2 (beyond MCP)
-4. [M6 — `research start` + `check` (async)](tasks/add-async-research-commands.md) — P1 (MCP `deep_researcher_*`)
-5. [M7 — contract hardening](tasks/add-contract-hardening.md) — P2 (workspace standard)
+1. [M4 — `find-similar` subcommand](tasks/add-find-similar-subcommand.md) — P2 (beyond MCP)
+2. [M5 — `answer` subcommand](tasks/add-answer-subcommand.md) — P2 (beyond MCP)
+3. [M6 — `research start` + `check` (async)](tasks/add-async-research-commands.md) — P1 (MCP `deep_researcher_*`)
+4. [M7 — contract hardening](tasks/add-contract-hardening.md) — P2 (workspace standard)
 
 ## Backlog
 

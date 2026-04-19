@@ -49,7 +49,20 @@ Env var is the only accepted source. Missing key → exit code 2.
 exa search "best open-source vector databases"
 exa search "rust async runtime" --type keyword --num-results 5 --pretty
 exa search "OSINT tools 2026" --out results.json
+
+# Company / people research (MCP parity)
+exa search "Stripe" --category company --num-results 3
+exa search "Guido van Rossum" --category people
+
+# Filter + inline contents in one call
+exa search "attention is all you need" --category research_paper \
+  --include-domain arxiv.org --start-published 2026-01-01 \
+  --text --summary --highlights 3
 ```
+
+> `--category company` and `--category people` replace the Exa MCP server's
+> `company_research_exa` and `people_search_exa` tools — one flag, same
+> upstream endpoint, no separate subcommand.
 
 ### Flags
 
@@ -62,6 +75,39 @@ exa search "OSINT tools 2026" --out results.json
 | `-o, --out FILE` | stdout | Write JSON to file |
 | `-v, --verbose` | `false` | Log request summary to stderr |
 | `-q, --quiet` | `false` | Suppress stderr logs |
+| `--dry-run` | `false` | Print the planned request (API key redacted) and exit |
+
+#### Filters
+
+| Flag | Description |
+|---|---|
+| `--category CAT` | One of: `research_paper`, `news`, `pdf`, `github`, `tweet`, `movie`, `song`, `personal_site`, `linkedin_profile`, `financial_report`, `company`, `people` |
+| `--include-domain DOMAIN` | Only return results from this domain (repeatable) |
+| `--exclude-domain DOMAIN` | Exclude results from this domain (repeatable) |
+| `--start-published YYYY-MM-DD` | Earliest publish date |
+| `--end-published YYYY-MM-DD` | Latest publish date |
+| `--start-crawl YYYY-MM-DD` | Earliest crawl date |
+| `--end-crawl YYYY-MM-DD` | Latest crawl date |
+| `--include-text STR` | Text that must appear in the result (repeatable, max 5) |
+| `--exclude-text STR` | Text that must not appear in the result (repeatable, max 5) |
+| `--user-location CC` | ISO 3166-1 alpha-2 country code (e.g. `US`) |
+| `--moderation` | Enable Exa content moderation |
+
+Upstream rejects some combinations (e.g. date filters with `--category company`
+or `--category people`) with a 400 — the CLI does not duplicate that policy;
+the server's error is surfaced as-is.
+
+#### Inline content enrichment
+
+Match the flags on `exa contents`; setting any of these embeds the enrichment
+directly in each search result and avoids a separate `/contents` round-trip.
+
+| Flag | Description |
+|---|---|
+| `--text` | Return the full page text inline |
+| `--summary` | Return an LLM-generated summary inline |
+| `--highlights N` | Return top-N highlight snippets (0 = off) |
+| `--subpages N` | Crawl up to N subpages per result (0 = off) |
 
 ### Example output
 
@@ -146,8 +192,9 @@ arg is `-`. Duplicates are deduped preserving first-seen order.
 
 ## Status
 
-Milestone 2 shipped: `search`, `contents`. Follow-ups on the backlog:
-richer search filters, `find-similar`, `answer`, and async `research`.
+Milestones 1-3 shipped: `search` (with category/domain/date/text filters and
+inline contents), `contents`. Follow-ups on the backlog:
+`find-similar`, `answer`, and async `research`.
 
 ## License
 

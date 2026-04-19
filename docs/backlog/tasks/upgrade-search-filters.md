@@ -2,7 +2,7 @@
 title: M3 — `search` filter upgrade (advanced/company/people parity)
 type: task
 priority: P1
-status: todo
+status: done
 created: 2026-04-18
 ---
 
