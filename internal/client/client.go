@@ -100,9 +100,31 @@ func New(apiKey string, opts ...Option) (*Client, error) {
 // backoff. Does NOT retry on 4xx (other than 429) — those are client errors
 // and retrying will not help.
 func (c *Client) Search(ctx context.Context, req SearchRequest) (*SearchResponse, error) {
-	body, err := json.Marshal(req)
+	var out SearchResponse
+	if err := c.postJSON(ctx, "/search", req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// Contents calls POST /contents and decodes the response.
+//
+// Shares the retry/backoff policy with Search.
+func (c *Client) Contents(ctx context.Context, req ContentsRequest) (*ContentsResponse, error) {
+	var out ContentsResponse
+	if err := c.postJSON(ctx, "/contents", req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// postJSON marshals in, POSTs it to path, and decodes the 2xx response into
+// out. Handles retries on 429/5xx and network errors per the client's
+// maxRetries/backoff config.
+func (c *Client) postJSON(ctx context.Context, path string, in, out any) error {
+	body, err := json.Marshal(in)
 	if err != nil {
-		return nil, fmt.Errorf("marshal request: %w", err)
+		return fmt.Errorf("marshal request: %w", err)
 	}
 
 	var lastErr error
@@ -110,12 +132,12 @@ func (c *Client) Search(ctx context.Context, req SearchRequest) (*SearchResponse
 		if attempt > 0 {
 			select {
 			case <-ctx.Done():
-				return nil, ctx.Err()
+				return ctx.Err()
 			case <-time.After(c.backoff(attempt)):
 			}
 		}
 
-		resp, err := c.doRequest(ctx, body)
+		resp, err := c.doRequest(ctx, path, body)
 		if err != nil {
 			// Network errors are retriable up to maxRetries.
 			lastErr = &NetworkError{Err: err}
@@ -125,11 +147,10 @@ func (c *Client) Search(ctx context.Context, req SearchRequest) (*SearchResponse
 		// 2xx → parse + return.
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			defer resp.Body.Close()
-			var out SearchResponse
-			if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-				return nil, fmt.Errorf("decode response: %w", err)
+			if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
+				return fmt.Errorf("decode response: %w", err)
 			}
-			return &out, nil
+			return nil
 		}
 
 		// Drain + close body so the connection can be reused.
@@ -144,15 +165,15 @@ func (c *Client) Search(ctx context.Context, req SearchRequest) (*SearchResponse
 		}
 
 		// Non-retriable 4xx — fail immediately.
-		return nil, apiErr
+		return apiErr
 	}
 
-	return nil, lastErr
+	return lastErr
 }
 
 // doRequest builds and sends a single HTTP request. No retry logic here.
-func (c *Client) doRequest(ctx context.Context, body []byte) (*http.Response, error) {
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/search", bytes.NewReader(body))
+func (c *Client) doRequest(ctx context.Context, path string, body []byte) (*http.Response, error) {
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+path, bytes.NewReader(body))
 	if err != nil {
 		return nil, err
 	}

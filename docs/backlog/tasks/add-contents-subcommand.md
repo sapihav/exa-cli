@@ -2,7 +2,7 @@
 title: M2 — `contents` subcommand (web_fetch_exa parity)
 type: task
 priority: P1
-status: todo
+status: done
 created: 2026-04-18
 ---
 

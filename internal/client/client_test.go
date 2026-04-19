@@ -222,6 +222,125 @@ func TestSearch_ContextCancel(t *testing.T) {
 	}
 }
 
+// TestContents_HappyPath: 200 OK with a valid body decodes into ContentsResponse.
+// Exercises the shared postJSON helper through a different endpoint than /search
+// and verifies that the URLs array is serialized correctly.
+func TestContents_HappyPath(t *testing.T) {
+	var gotBody ContentsRequest
+	var gotMethod, gotPath, gotAuth string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotAuth = r.Header.Get("x-api-key")
+		b, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(b, &gotBody)
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"requestId": "req_c1",
+			"results": [
+				{"id":"a1","url":"https://a.example","title":"A","text":"alpha","highlights":["h1","h2"]},
+				{"id":"b1","url":"https://b.example","title":"B","summary":"beta-summary"}
+			]
+		}`))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv, 0)
+	resp, err := c.Contents(context.Background(), ContentsRequest{
+		URLs:       []string{"https://a.example", "https://b.example"},
+		Text:       true,
+		Summary:    true,
+		Highlights: 2,
+		Livecrawl:  "fallback",
+	})
+	if err != nil {
+		t.Fatalf("Contents: %v", err)
+	}
+
+	if gotMethod != http.MethodPost {
+		t.Errorf("method: %s", gotMethod)
+	}
+	if gotPath != "/contents" {
+		t.Errorf("path: %s", gotPath)
+	}
+	if gotAuth != "test-key" {
+		t.Errorf("auth header: %q", gotAuth)
+	}
+	if len(gotBody.URLs) != 2 || gotBody.URLs[0] != "https://a.example" {
+		t.Errorf("urls: %v", gotBody.URLs)
+	}
+	if !gotBody.Text || !gotBody.Summary || gotBody.Highlights != 2 || gotBody.Livecrawl != "fallback" {
+		t.Errorf("request body mismatch: %+v", gotBody)
+	}
+
+	if resp.RequestID != "req_c1" {
+		t.Errorf("RequestID: %q", resp.RequestID)
+	}
+	if len(resp.Results) != 2 {
+		t.Fatalf("want 2 results, got %d", len(resp.Results))
+	}
+	if resp.Results[0].Text != "alpha" || len(resp.Results[0].Highlights) != 2 {
+		t.Errorf("results[0]: %+v", resp.Results[0])
+	}
+	if resp.Results[1].Summary != "beta-summary" {
+		t.Errorf("results[1]: %+v", resp.Results[1])
+	}
+}
+
+// TestContents_StatusesNumericHTTPCode: Exa returns `httpStatusCode` inside
+// per-URL `statuses[].error` as a JSON number (e.g. 404). The field is typed
+// as json.RawMessage so the whole response still decodes cleanly; this test
+// guards against a regression to a concrete scalar type that would fail
+// to decode and silently drop the statuses array.
+func TestContents_StatusesNumericHTTPCode(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"requestId": "req_statuses",
+			"results": [],
+			"statuses": [
+				{"id":"u1","status":"error","error":{"tag":"NOT_FOUND","httpStatusCode":404}}
+			]
+		}`))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv, 0)
+	resp, err := c.Contents(context.Background(), ContentsRequest{URLs: []string{"https://x"}})
+	if err != nil {
+		t.Fatalf("Contents: %v", err)
+	}
+	if len(resp.Statuses) != 1 {
+		t.Fatalf("want 1 status, got %d", len(resp.Statuses))
+	}
+	if resp.Statuses[0].Error == nil || resp.Statuses[0].Error.Tag != "NOT_FOUND" {
+		t.Errorf("status error: %+v", resp.Statuses[0].Error)
+	}
+	if got := string(resp.Statuses[0].Error.HTTPStatusCode); got != "404" {
+		t.Errorf("httpStatusCode raw: %q, want 404", got)
+	}
+}
+
+// TestContents_ErrorPropagation: a 500 propagates through postJSON as an
+// APIError just like Search does. Guards against regressions from the
+// Search→postJSON refactor.
+func TestContents_ErrorPropagation(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`boom`))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv, 0)
+	_, err := c.Contents(context.Background(), ContentsRequest{URLs: []string{"https://x"}})
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusInternalServerError {
+		t.Fatalf("want 500 APIError, got %v", err)
+	}
+}
+
 // TestDefaultBackoff_Grows: sanity check on the backoff schedule — it must
 // be monotonically non-decreasing and capped.
 func TestDefaultBackoff_Grows(t *testing.T) {
