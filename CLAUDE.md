@@ -11,7 +11,7 @@ Thin CLI wrapper for the Exa AI API (semantic + neural search, people/company, c
 
 ## Status
 
-**M1 shipped** — `search` subcommand. Stack: **Go 1.25.6** + `spf13/cobra` + stdlib `net/http` (overrides ROADMAP §2's Python stack).
+**M1 + M2 shipped** — `search` and `contents` subcommands. Stack: **Go 1.25.6** + `spf13/cobra` + stdlib `net/http` (overrides ROADMAP §2's Python stack).
 
 ## Auth
 

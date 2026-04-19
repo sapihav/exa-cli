@@ -112,10 +112,42 @@ stderr and are not wrapped (see [Exit codes](#exit-codes)).
 | `2` | User / config error (missing key, bad flag, empty query) |
 | `3` | Network error (DNS, TCP, TLS, timeout) |
 
+## Usage — `exa contents`
+
+Fetches clean content (text, summary, highlights, subpages) for one or more
+URLs via Exa's `/contents` endpoint. Batches multiple URLs into a single
+request.
+
+```sh
+exa contents https://example.com https://anotherexample.com --pretty
+exa contents https://example.com --text --highlights 3
+exa contents https://example.com --summary --livecrawl preferred
+exa contents --urls https://a.com,https://b.com --subpages 2
+
+# From stdin (newline-separated)
+printf 'https://a.com\nhttps://b.com\n' | exa contents - --text
+```
+
+### Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--urls a,b,c` | — | Comma-separated URLs (in addition to args / stdin) |
+| `--text` | `false` | Return the full page text |
+| `--summary` | `false` | Return an LLM-generated summary |
+| `--highlights N` | `0` | Return the top N highlight snippets |
+| `--subpages N` | `0` | Crawl N subpages per URL |
+| `--livecrawl never\|fallback\|always\|preferred` | unset | Live-crawl behaviour |
+| `--max-retries N` | `3` | Retry attempts on `429` / `5xx` |
+| `--dry-run` | `false` | Print the planned request (API key redacted) and exit |
+
+URLs can be passed as positional args, via `--urls`, or on stdin when any
+arg is `-`. Duplicates are deduped preserving first-seen order.
+
 ## Status
 
-Milestone 1: `search` only. Follow-ups (`find-similar`, `contents`, `answer`)
-are out of scope for now.
+Milestone 2 shipped: `search`, `contents`. Follow-ups on the backlog:
+richer search filters, `find-similar`, `answer`, and async `research`.
 
 ## License
 
