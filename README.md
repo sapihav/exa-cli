@@ -190,11 +190,31 @@ printf 'https://a.com\nhttps://b.com\n' | exa contents - --text
 URLs can be passed as positional args, via `--urls`, or on stdin when any
 arg is `-`. Duplicates are deduped preserving first-seen order.
 
+## Usage — `exa find-similar`
+
+Find pages similar to a URL via Exa's `/findSimilar` endpoint. This capability
+is **not exposed by the Exa MCP server** — it is a CLI-native advantage.
+Shares the full filter + enrichment surface of `exa search`, plus
+`--exclude-source-domain` to drop hits from the input URL's own domain.
+
+```sh
+exa find-similar https://arxiv.org/abs/2307.06435 --num-results 5 --pretty
+exa find-similar https://stripe.com --exclude-source-domain --category company
+echo "https://exa.ai" | exa find-similar - --text --summary
+```
+
+URL can be passed as the positional arg or piped on stdin (use `-`). All the
+filter / enrichment flags from `exa search` are accepted (`--category`,
+`--include-domain`, `--exclude-domain`, `--start-published`, `--end-published`,
+`--start-crawl`, `--end-crawl`, `--include-text`, `--exclude-text`,
+`--user-location`, `--moderation`, `--text`, `--summary`, `--highlights N`,
+`--subpages N`, `--livecrawl`).
+
 ## Status
 
-Milestones 1-3 shipped: `search` (with category/domain/date/text filters and
-inline contents), `contents`. Follow-ups on the backlog:
-`find-similar`, `answer`, and async `research`.
+Milestones 1-4 shipped: `search` (with category/domain/date/text filters and
+inline contents), `contents`, `find-similar`. Follow-ups on the backlog:
+`answer`, and async `research`.
 
 ## License
 

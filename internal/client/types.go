@@ -85,6 +85,36 @@ type SearchResponse struct {
 	Results          []SearchResult `json:"results"`
 }
 
+// FindSimilarRequest is the JSON body sent to POST /findSimilar.
+//
+// Field names mirror Exa's /findSimilar contract. The endpoint accepts the
+// same enrichment / filter set as /search (numResults, domains, dates,
+// includeText/excludeText, userLocation, moderation, category, contents),
+// plus a `url` (required) and `excludeSourceDomain` (boolean) — the latter
+// drops results from the same domain as the input URL.
+//
+// Response shape is identical to /search, so SearchResponse is reused on the
+// receive side.
+//
+// See https://docs.exa.ai/reference/find-similar-links.
+type FindSimilarRequest struct {
+	URL                 string          `json:"url"`
+	NumResults          int             `json:"numResults,omitempty"`
+	ExcludeSourceDomain bool            `json:"excludeSourceDomain,omitempty"`
+	Category            string          `json:"category,omitempty"`
+	IncludeDomains      []string        `json:"includeDomains,omitempty"`
+	ExcludeDomains      []string        `json:"excludeDomains,omitempty"`
+	StartPublishedDate  string          `json:"startPublishedDate,omitempty"`
+	EndPublishedDate    string          `json:"endPublishedDate,omitempty"`
+	StartCrawlDate      string          `json:"startCrawlDate,omitempty"`
+	EndCrawlDate        string          `json:"endCrawlDate,omitempty"`
+	IncludeText         []string        `json:"includeText,omitempty"`
+	ExcludeText         []string        `json:"excludeText,omitempty"`
+	UserLocation        string          `json:"userLocation,omitempty"`
+	Moderation          bool            `json:"moderation,omitempty"`
+	Contents            *SearchContents `json:"contents,omitempty"`
+}
+
 // ContentsRequest is the JSON body sent to POST /contents.
 //
 // Upstream accepts rich sub-objects for text/summary/highlights (custom

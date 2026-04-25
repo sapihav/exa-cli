@@ -2,7 +2,7 @@
 title: M4 — `find-similar` subcommand (beyond MCP parity)
 type: task
 priority: P2
-status: todo
+status: done
 created: 2026-04-18
 ---
 

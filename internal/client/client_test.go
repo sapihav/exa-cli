@@ -341,6 +341,148 @@ func TestContents_ErrorPropagation(t *testing.T) {
 	}
 }
 
+// TestFindSimilar_HappyPath: 200 OK with a valid body decodes into
+// SearchResponse (the /findSimilar response shape is identical to /search).
+// Asserts method, path, auth header, and request body wiring.
+func TestFindSimilar_HappyPath(t *testing.T) {
+	var gotBody FindSimilarRequest
+	var gotMethod, gotPath, gotAuth string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotAuth = r.Header.Get("x-api-key")
+		b, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(b, &gotBody)
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"requestId": "req_fs_1",
+			"results": [
+				{"title":"X","url":"https://x","id":"x1"},
+				{"title":"Y","url":"https://y","id":"y1"}
+			]
+		}`))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv, 0)
+	resp, err := c.FindSimilar(context.Background(), FindSimilarRequest{
+		URL:                 "https://arxiv.org/abs/2307.06435",
+		NumResults:          2,
+		ExcludeSourceDomain: true,
+	})
+	if err != nil {
+		t.Fatalf("FindSimilar: %v", err)
+	}
+
+	if gotMethod != http.MethodPost {
+		t.Errorf("method: %s", gotMethod)
+	}
+	if gotPath != "/findSimilar" {
+		t.Errorf("path: %s", gotPath)
+	}
+	if gotAuth != "test-key" {
+		t.Errorf("auth header: %q", gotAuth)
+	}
+	if gotBody.URL != "https://arxiv.org/abs/2307.06435" || !gotBody.ExcludeSourceDomain || gotBody.NumResults != 2 {
+		t.Errorf("request body mismatch: %+v", gotBody)
+	}
+
+	if resp.RequestID != "req_fs_1" {
+		t.Errorf("RequestID: %q", resp.RequestID)
+	}
+	if len(resp.Results) != 2 || resp.Results[0].Title != "X" {
+		t.Errorf("results mismatch: %+v", resp.Results)
+	}
+}
+
+// TestFindSimilar_4xxNoRetry: 400 propagates as APIError without a retry loop.
+func TestFindSimilar_4xxNoRetry(t *testing.T) {
+	var calls atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"error":"invalid url"}`))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv, 5)
+	_, err := c.FindSimilar(context.Background(), FindSimilarRequest{URL: "not-a-url"})
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) || apiErr.StatusCode != http.StatusBadRequest {
+		t.Fatalf("want 400 APIError, got %v", err)
+	}
+	if calls.Load() != 1 {
+		t.Errorf("4xx must not retry, got %d calls", calls.Load())
+	}
+}
+
+// TestFindSimilar_RetryOn5xxThenSuccess: 500, 500, 200 with maxRetries=3
+// surfaces the eventual success.
+func TestFindSimilar_RetryOn5xxThenSuccess(t *testing.T) {
+	var calls atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n := calls.Add(1)
+		if n < 3 {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(`boom`))
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"results":[{"title":"ok","url":"https://ok"}]}`))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv, 3)
+	resp, err := c.FindSimilar(context.Background(), FindSimilarRequest{URL: "https://exa.ai"})
+	if err != nil {
+		t.Fatalf("FindSimilar: %v", err)
+	}
+	if calls.Load() != 3 {
+		t.Errorf("want 3 calls, got %d", calls.Load())
+	}
+	if len(resp.Results) != 1 || resp.Results[0].Title != "ok" {
+		t.Errorf("unexpected response: %+v", resp)
+	}
+}
+
+// TestFindSimilar_MalformedJSON: server returns invalid JSON -> a decode
+// error (not a panic), surfaced verbatim through the client.
+func TestFindSimilar_MalformedJSON(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{not json`))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv, 0)
+	_, err := c.FindSimilar(context.Background(), FindSimilarRequest{URL: "https://exa.ai"})
+	if err == nil {
+		t.Fatal("want decode error, got nil")
+	}
+	if !strings.Contains(err.Error(), "decode response") {
+		t.Errorf("err %q should mention decode", err)
+	}
+}
+
+// TestFindSimilar_TransportError: connecting to an immediately-closed server
+// surfaces a NetworkError after retries are exhausted.
+func TestFindSimilar_TransportError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	srv.Close() // close immediately so dials fail.
+
+	c := newTestClient(t, srv, 1)
+	_, err := c.FindSimilar(context.Background(), FindSimilarRequest{URL: "https://exa.ai"})
+	if err == nil {
+		t.Fatal("want network error, got nil")
+	}
+	var netErr *NetworkError
+	if !errors.As(err, &netErr) {
+		t.Fatalf("want *NetworkError, got %T: %v", err, err)
+	}
+}
+
 // TestDefaultBackoff_Grows: sanity check on the backoff schedule — it must
 // be monotonically non-decreasing and capped.
 func TestDefaultBackoff_Grows(t *testing.T) {

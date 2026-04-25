@@ -107,6 +107,19 @@ func (c *Client) Search(ctx context.Context, req SearchRequest) (*SearchResponse
 	return &out, nil
 }
 
+// FindSimilar calls POST /findSimilar and decodes the response.
+//
+// The /findSimilar endpoint returns the same shape as /search, so we reuse
+// SearchResponse on the receive side. Retry/backoff policy is shared via
+// postJSON.
+func (c *Client) FindSimilar(ctx context.Context, req FindSimilarRequest) (*SearchResponse, error) {
+	var out SearchResponse
+	if err := c.postJSON(ctx, "/findSimilar", req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // Contents calls POST /contents and decodes the response.
 //
 // Shares the retry/backoff policy with Search.
