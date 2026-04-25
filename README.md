@@ -6,6 +6,10 @@ Agent-friendly: JSON on stdout, logs on stderr, documented exit codes.
 > Unrelated to the [`exa`](https://the.exa.website/) file-listing tool. Same
 > name on `$PATH` — pick whichever you need per shell.
 
+## Parity
+
+`█████████████░░░░░░░` **65%** — `search` (incl. category variants), `contents`, `find-similar` shipped. `answer` (M5), deep `research` (M6), `exa schema` + contract-flag hardening (M7) remain. See [PARITY.md](PARITY.md).
+
 ## Install
 
 **Homebrew (macOS)** — recommended on Mac:
