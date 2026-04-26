@@ -483,6 +483,78 @@ func TestFindSimilar_TransportError(t *testing.T) {
 	}
 }
 
+// TestAnswer_HappyPath: 200 OK with a valid body decodes into AnswerResponse.
+// Asserts method, path, auth header, and request body wiring. The answer
+// field is left as RawMessage because /answer can return either a string or
+// an object depending on whether `outputSchema` was passed.
+func TestAnswer_HappyPath(t *testing.T) {
+	var gotBody AnswerRequest
+	var gotMethod, gotPath, gotAuth string
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotMethod = r.Method
+		gotPath = r.URL.Path
+		gotAuth = r.Header.Get("x-api-key")
+		b, _ := io.ReadAll(r.Body)
+		_ = json.Unmarshal(b, &gotBody)
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{
+			"answer": "Paris.",
+			"citations": [
+				{"id":"c1","url":"https://en.wikipedia.org/wiki/Paris","title":"Paris"}
+			]
+		}`))
+	}))
+	defer srv.Close()
+
+	c := newTestClient(t, srv, 0)
+	resp, err := c.Answer(context.Background(), AnswerRequest{
+		Query: "what is the capital of France?",
+		Text:  true,
+	})
+	if err != nil {
+		t.Fatalf("Answer: %v", err)
+	}
+
+	if gotMethod != http.MethodPost {
+		t.Errorf("method: %s", gotMethod)
+	}
+	if gotPath != "/answer" {
+		t.Errorf("path: %s", gotPath)
+	}
+	if gotAuth != "test-key" {
+		t.Errorf("auth header: %q", gotAuth)
+	}
+	if gotBody.Query != "what is the capital of France?" || !gotBody.Text {
+		t.Errorf("request body mismatch: %+v", gotBody)
+	}
+
+	if string(resp.Answer) != `"Paris."` {
+		t.Errorf("answer: %s", resp.Answer)
+	}
+	if len(resp.Citations) != 1 || resp.Citations[0].URL != "https://en.wikipedia.org/wiki/Paris" {
+		t.Errorf("citations mismatch: %+v", resp.Citations)
+	}
+}
+
+// TestAnswer_TransportError: a closed server surfaces as NetworkError so
+// the CLI maps it to exit 3.
+func TestAnswer_TransportError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+	srv.Close()
+
+	c := newTestClient(t, srv, 1)
+	_, err := c.Answer(context.Background(), AnswerRequest{Query: "hi?"})
+	if err == nil {
+		t.Fatal("want network error, got nil")
+	}
+	var netErr *NetworkError
+	if !errors.As(err, &netErr) {
+		t.Fatalf("want *NetworkError, got %T: %v", err, err)
+	}
+}
+
 // TestDefaultBackoff_Grows: sanity check on the backoff schedule — it must
 // be monotonically non-decreasing and capped.
 func TestDefaultBackoff_Grows(t *testing.T) {

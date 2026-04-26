@@ -8,7 +8,7 @@ Agent-friendly: JSON on stdout, logs on stderr, documented exit codes.
 
 ## Parity
 
-`█████████████░░░░░░░` **65%** — `search` (incl. category variants), `contents`, `find-similar` shipped. `answer` (M5), deep `research` (M6), `exa schema` + contract-flag hardening (M7) remain. See [PARITY.md](PARITY.md).
+`███████████████░░░░░` **75%** — `search` (incl. category variants), `contents`, `find-similar`, `answer` shipped. Deep `research` (M6), `exa schema` + contract-flag hardening (M7) remain. See [PARITY.md](PARITY.md).
 
 ## Install
 
@@ -214,11 +214,40 @@ filter / enrichment flags from `exa search` are accepted (`--category`,
 `--user-location`, `--moderation`, `--text`, `--summary`, `--highlights N`,
 `--subpages N`, `--livecrawl`).
 
+## Usage — `exa answer`
+
+Synthesize a direct, cited answer to a question via Exa's `/answer` endpoint.
+This capability is **not exposed by the Exa MCP server** — it is a CLI-native
+advantage. One round-trip beats `search` + manual synthesis when you just
+want a fast, cited reply.
+
+```sh
+exa answer "what is the capital of France?" --pretty
+exa answer "summarize the latest LLM scaling research" --text
+echo "who founded Stripe?" | exa answer -
+exa answer "list the top 3 vector DBs" \
+  --output-schema '{"type":"object","properties":{"dbs":{"type":"array","items":{"type":"string"}}}}'
+```
+
+The question can be a positional arg or piped via stdin (use `-`). Multi-line
+stdin is joined into a single query.
+
+### Flags
+
+| Flag | Default | Description |
+|---|---|---|
+| `--text` | `false` | Include source text on each citation |
+| `--output-schema <json>` | unset | JSON Schema (Draft 7) — answer is returned as structured JSON |
+| `--max-retries N` | `3` | Retry attempts on `429` / `5xx` |
+| `--dry-run` | `false` | Print the planned request (API key redacted) and exit |
+
+Streaming (SSE) is not yet supported — see the backlog Ideas.
+
 ## Status
 
-Milestones 1-4 shipped: `search` (with category/domain/date/text filters and
-inline contents), `contents`, `find-similar`. Follow-ups on the backlog:
-`answer`, and async `research`.
+Milestones 1-5 shipped: `search` (with category/domain/date/text filters and
+inline contents), `contents`, `find-similar`, `answer`. Follow-ups on the
+backlog: async `research` (M6), `exa schema` + contract-flag hardening (M7).
 
 ## License
 

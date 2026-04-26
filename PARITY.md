@@ -2,7 +2,7 @@
 
 Capability map across the upstream Exa AI HTTP API, the official Exa MCP server, and the `exa` CLI in this repo. Use this to see at a glance what is shipped, planned (with milestone), or intentionally skipped.
 
-Last audited: 2026-04-25 (M4)
+Last audited: 2026-04-26 (M5)
 Sources: `https://exa.ai/docs/reference` (REST API), `https://github.com/exa-labs/exa-mcp-server` (MCP tools), `docs/backlog/_index.md` + `docs/backlog/tasks/*` (planned work), shipped commands via `exa --help` / `cmd/*.go`.
 
 ## Matrix
@@ -18,7 +18,7 @@ Sources: `https://exa.ai/docs/reference` (REST API), `https://github.com/exa-lab
 | `POST /contents` (code-context vertical) | `get_code_context_exa` (deprecated) | — | skipped | MCP tool deprecated upstream; backlog idea only (`exa context`). Skip unless requested. |
 | `POST /search` (crawl mode) | `crawling_exa` (deprecated) | partial via `exa search --subpages N` and `exa contents --subpages N --livecrawl ...` | shipped (M2/M3) | No standalone `crawl` command; subpage/livecrawl knobs cover the use case. |
 | `POST /findSimilar` | — (not exposed by MCP) | `exa find-similar <url>` | shipped (M4) | CLI-native advantage over MCP — full filter + enrichment surface plus `--exclude-source-domain`. |
-| `POST /answer` | — (not exposed by MCP) | `exa answer "<q>"` | planned (M5) | CLI-native advantage over MCP. P2. Streaming SSE listed in backlog Ideas. |
+| `POST /answer` | — (not exposed by MCP) | `exa answer "<q>"` | shipped (M5) | CLI-native advantage over MCP. Supports `--text` and `--output-schema` (JSON Schema Draft 7). Streaming SSE listed in backlog Ideas. |
 | `POST /research` (create task) | `deep_researcher_start` (deprecated) | `exa research start "<prompt>"` | planned (M6) | P1. Backlog also defines `exa research run` as submit+poll convenience. |
 | `GET /research/{id}` | `deep_researcher_check` (deprecated) | `exa research check <id>` | planned (M6) | Pairs with `research start`. |
 | `POST /research` (single-shot) | `deep_search_exa` (deprecated) | covered by `exa research run` | planned (M6) | The `run` convenience subsumes the deprecated single-shot tool. |

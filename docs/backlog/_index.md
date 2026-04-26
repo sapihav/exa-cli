@@ -6,9 +6,8 @@ _(work currently in flight)_
 
 ## Up Next
 
-1. [M5 — `answer` subcommand](tasks/add-answer-subcommand.md) — P2 (beyond MCP)
-2. [M6 — `research start` + `check` (async)](tasks/add-async-research-commands.md) — P1 (MCP `deep_researcher_*`)
-3. [M7 — contract hardening](tasks/add-contract-hardening.md) — P2 (workspace standard)
+1. [M6 — `research start` + `check` (async)](tasks/add-async-research-commands.md) — P1 (MCP `deep_researcher_*`)
+2. [M7 — contract hardening](tasks/add-contract-hardening.md) — P2 (workspace standard)
 
 ## Backlog
 

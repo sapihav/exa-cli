@@ -131,6 +131,19 @@ func (c *Client) Contents(ctx context.Context, req ContentsRequest) (*ContentsRe
 	return &out, nil
 }
 
+// Answer calls POST /answer and decodes the response.
+//
+// The /answer endpoint returns a synthesized answer with citations — useful
+// when the caller wants a one-shot cited reply rather than running search +
+// manual synthesis. Shares the retry/backoff policy with Search.
+func (c *Client) Answer(ctx context.Context, req AnswerRequest) (*AnswerResponse, error) {
+	var out AnswerResponse
+	if err := c.postJSON(ctx, "/answer", req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // postJSON marshals in, POSTs it to path, and decodes the 2xx response into
 // out. Handles retries on 429/5xx and network errors per the client's
 // maxRetries/backoff config.

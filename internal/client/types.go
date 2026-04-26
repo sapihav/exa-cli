@@ -175,3 +175,50 @@ type ContentsResponse struct {
 	Results   []ContentsResult `json:"results"`
 	Statuses  []ContentsStatus `json:"statuses,omitempty"`
 }
+
+// AnswerRequest is the JSON body sent to POST /answer.
+//
+// The endpoint synthesizes a direct answer with citations for `query`. When
+// `Text` is true, each citation includes the source page text; when
+// `OutputSchema` is set the answer is returned as structured JSON matching
+// that JSON-Schema (Draft 7) instead of a plain string.
+//
+// Stream mode is intentionally not modeled here — SSE streaming is tracked
+// as a follow-up Idea in the backlog and would require a different transport
+// path.
+//
+// See https://exa.ai/docs/reference/answer.
+type AnswerRequest struct {
+	Query        string          `json:"query"`
+	Text         bool            `json:"text,omitempty"`
+	OutputSchema json.RawMessage `json:"outputSchema,omitempty"`
+}
+
+// AnswerCitation is one source backing the synthesized answer.
+//
+// Fields mirror the documented schema: `Text` is populated only when the
+// request set `text=true`; the rest are best-effort.
+type AnswerCitation struct {
+	ID            string `json:"id,omitempty"`
+	URL           string `json:"url,omitempty"`
+	Title         string `json:"title,omitempty"`
+	Author        string `json:"author,omitempty"`
+	PublishedDate string `json:"publishedDate,omitempty"`
+	Text          string `json:"text,omitempty"`
+	Image         string `json:"image,omitempty"`
+	Favicon       string `json:"favicon,omitempty"`
+}
+
+// AnswerResponse is the full /answer response payload.
+//
+// `Answer` is decoded as json.RawMessage because the API returns either a
+// plain string or a JSON object (when `outputSchema` was passed). RawMessage
+// preserves both shapes verbatim so downstream consumers can branch on the
+// first byte. `CostDollars` is also RawMessage — the breakdown shape varies
+// across endpoint versions and we surface it untouched rather than risk
+// drift.
+type AnswerResponse struct {
+	Answer      json.RawMessage  `json:"answer,omitempty"`
+	Citations   []AnswerCitation `json:"citations,omitempty"`
+	CostDollars json.RawMessage  `json:"costDollars,omitempty"`
+}
