@@ -2,7 +2,7 @@
 
 Capability map across the upstream Exa AI HTTP API, the official Exa MCP server, and the `exa` CLI in this repo. Use this to see at a glance what is shipped, planned (with milestone), or intentionally skipped.
 
-Last audited: 2026-04-26 (M5)
+Last audited: 2026-04-26 (M5; published-artifact smoke: brew cask `sapihav/tap/exa` v0.6.0 — `version`, `--help` pass; `schema` confirmed absent — see M7 below)
 Sources: `https://exa.ai/docs/reference` (REST API), `https://github.com/exa-labs/exa-mcp-server` (MCP tools), `docs/backlog/_index.md` + `docs/backlog/tasks/*` (planned work), shipped commands via `exa --help` / `cmd/*.go`.
 
 ## Matrix
@@ -24,7 +24,7 @@ Sources: `https://exa.ai/docs/reference` (REST API), `https://github.com/exa-lab
 | `POST /research` (single-shot) | `deep_search_exa` (deprecated) | covered by `exa research run` | planned (M6) | The `run` convenience subsumes the deprecated single-shot tool. |
 | Websets API (`/websets/...`) | — (separate Websets MCP server, out of scope here) | — | skipped (separate product) | Listed under backlog Ideas; would be its own CLI track or subcommand group. |
 | Monitors API | — | — | skipped (out of scope) | Not in backlog; recurring searches + webhook delivery are not a CLI primitive. |
-| `schema` (introspection, workspace contract) | n/a | `exa schema` | planned (M7) | Required by workspace `CLAUDE.md` contract; not yet shipped (`exa schema` currently returns "unknown command"). |
+| `schema` (introspection, workspace contract) | n/a | `exa schema` | planned (M7) | Required by workspace `CLAUDE.md` contract; not yet shipped (`exa schema` currently returns "unknown command"). Re-confirmed via published-artifact smoke 2026-04-26 (cask v0.6.0). |
 | n/a | n/a | `exa version` | shipped | Local. |
 | n/a | n/a | `exa completion` | shipped | Cobra default. |
 
